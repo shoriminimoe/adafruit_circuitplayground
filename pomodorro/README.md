@@ -14,11 +14,11 @@ the alarm.
 
 1. Install the dependencies
 
-- Requires the Adafruit CircuitPython bundle with the following modules:
+   - Requires the Adafruit CircuitPython bundle with the following modules:
 
-  - adafruit_debouncer
-  - adafruit_ticks
-  - neopixel
+     - adafruit_debouncer
+     - adafruit_ticks
+     - neopixel
 
 1. Copy the project files to the CircuitPlayground filesystem
 1. Plug it in!
