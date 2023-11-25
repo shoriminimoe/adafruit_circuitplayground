@@ -1,16 +1,17 @@
 # pyright: reportShadowedImports=false, reportMissingImports=false
-import time
 import math
+import time
 
 import board
 import digitalio
 import neopixel
 from adafruit_debouncer import Button
 from adafruit_led_animation.animation.blink import Blink
+from micropython import const
 from user_alarm import Alarm
 from user_timer import Pomodoro
-from micropython import const
 
+SEC_TO_NS = const(1_000_000_000)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
@@ -24,22 +25,6 @@ led = digitalio.DigitalInOut(board.LED)
 led.switch_to_output(value=False)
 
 
-def wait_for_press(button: Button, led_animation=None):
-    button.update()
-    button.update()
-    while not button.pressed:
-        if led_animation is not None:
-            led_animation.animate()
-        button.update()
-
-
-Pomodoro.focus_duration = 10
-Pomodoro.short_break_duration = 2
-Pomodoro.long_break_duration = 6
-
-SEC_TO_NS = const(1_000_000_000)
-
-
 class LEDBlink:
     def __init__(self, led, period=1):
         self._led = led
@@ -51,6 +36,15 @@ class LEDBlink:
         if now > self._next_update:
             self._led.value = not self._led.value
             self._next_update = now + self._period
+
+
+def wait_for_press(button: Button, led_animation=None):
+    button.update()
+    button.update()
+    while not button.pressed:
+        if led_animation is not None:
+            led_animation.animate()
+        button.update()
 
 
 def main():
