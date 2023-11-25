@@ -6,7 +6,6 @@ import board
 import digitalio
 import neopixel
 from adafruit_debouncer import Button
-from adafruit_led_animation.animation.blink import Blink
 from micropython import const
 from user_alarm import Alarm
 from user_timer import Pomodoro
@@ -21,21 +20,50 @@ OFF = (0, 0, 0)
 button_a = digitalio.DigitalInOut(board.BUTTON_A)
 button_a.switch_to_input(digitalio.Pull.DOWN)
 pixels = neopixel.NeoPixel(board.NEOPIXEL, n=10, auto_write=False, brightness=0.3)
-led = digitalio.DigitalInOut(board.LED)
-led.switch_to_output(value=False)
+red_led = digitalio.DigitalInOut(board.LED)
+red_led.switch_to_output(value=False)
 
 
-class LEDBlink:
-    def __init__(self, led, period=1):
-        self._led = led
+class TimeToggle:
+    def __init__(self, period=1):
+        self._value = True
         self._period = int(period / 2 * SEC_TO_NS)
         self._next_update = time.monotonic_ns() + self._period
 
-    def animate(self):
+    @property
+    def value(self):
+        return self._value
+
+    def update(self):
         now = time.monotonic_ns()
         if now > self._next_update:
-            self._led.value = not self._led.value
+            self._value = not self._value
             self._next_update = now + self._period
+
+
+class LEDBlink(TimeToggle):
+    def __init__(self, led, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._led = led
+
+    def animate(self):
+        self.update()
+        self._led.value = self.value
+
+
+class PixelBlink(TimeToggle):
+    def __init__(self, *args, pixels, color, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._pixels = pixels
+        self._color = color
+
+    def animate(self):
+        self.update()
+        if self.value:
+            self._pixels.fill(self._color)
+        else:
+            self._pixels.fill(OFF)
+        self._pixels.show()
 
 
 def wait_for_press(button: Button, led_animation=None):
@@ -51,11 +79,11 @@ def main():
     pomo = Pomodoro()
     pomo_alarm = Alarm("beep.wav")
     continue_button = Button(button_a)
-    blink = Blink(pixels, speed=0.5, color=YELLOW)
-    red_led = LEDBlink(led, period=2)
+    blink = PixelBlink(pixels=pixels, period=1, color=YELLOW)
+    led_blink = LEDBlink(red_led, period=2)
     while True:
-        wait_for_press(continue_button, red_led)
-        led.value = False
+        wait_for_press(continue_button, led_blink)
+        red_led.value = False
 
         pixel_color = RED if pomo.focus_time else GREEN
         pixels.fill(pixel_color)
@@ -73,8 +101,8 @@ def main():
             continue_button.update()
             if continue_button.pressed:
                 pomo.pause()
-                wait_for_press(continue_button, red_led)
-                led.value = False
+                wait_for_press(continue_button, led_blink)
+                red_led.value = False
                 pomo.resume()
 
         pomo_alarm.start()
