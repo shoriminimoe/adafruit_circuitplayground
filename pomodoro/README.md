@@ -1,6 +1,6 @@
-# Pomodorro Timer
+# Pomodoro Timer
 
-Make your Adafruit CircuitPlayground a repeating pomodorro timer. The LEDs
+Make your Adafruit CircuitPlayground a repeating pomodoro timer. The LEDs
 indicate the time left by dimming and turning off as the timer expires. The
 LEDs are red, While the focus timer is active, and green while the break timer
 is active. An alarm sounds when the timer expires.
