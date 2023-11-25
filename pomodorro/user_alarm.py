@@ -1,14 +1,22 @@
 import audiocore
-import audioio
 import board
 import digitalio
+
+try:
+    import audioio
+
+    audio_out = audioio.AudioOut
+except ImportError:
+    import audiopwmio
+
+    audio_out = audiopwmio.PWMAudioOut
 
 
 class Alarm:
     def __init__(self, wav_file):
         self._data = open(wav_file, "rb")
         self._wav = audiocore.WaveFile(self._data)
-        self._speaker = audioio.AudioOut(board.SPEAKER)
+        self._speaker = audio_out(board.SPEAKER)
         self._speaker_enable = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
         self._speaker_enable.switch_to_output(value=True)
         self.stop()

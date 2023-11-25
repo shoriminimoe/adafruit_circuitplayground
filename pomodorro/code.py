@@ -5,8 +5,8 @@ import board
 import digitalio
 import neopixel
 from adafruit_debouncer import Button
-from alarm import Alarm
-from timer import Timer
+from user_alarm import Alarm
+from user_timer import Pomodoro
 
 MINUTES_25 = 60 * 25
 MINUTES_5 = 60 * 5
@@ -16,7 +16,7 @@ OFF = (0, 0, 0)
 
 button_a = digitalio.DigitalInOut(board.BUTTON_A)
 button_a.switch_to_input(digitalio.Pull.DOWN)
-pixels = neopixel.NeoPixel(board.NEOPIXEL, n=10, auto_write=False, brightness=0.3)
+pixels = neopixel.NeoPixel(board.NEOPIXEL, n=10, brightness=0.3)
 
 
 def wait_for_press(button: Button):
@@ -27,35 +27,30 @@ def wait_for_press(button: Button):
 
 
 def main():
+    pomo = Pomodoro()
     pomo_alarm = Alarm("beep.wav")
     continue_button = Button(button_a)
-    pomo_timer = Timer()
-    focus_time = True
     while True:
         wait_for_press(continue_button)
 
-        pomo_timer.duration = MINUTES_25 if focus_time else MINUTES_5
-        pixel_color = RED if focus_time else GREEN
+        pixel_color = RED if pomo.focus_time else GREEN
         pixels.fill(pixel_color)
-        pixels.show()
-        pomo_timer.start()
+        pomo.start()
 
-        while not pomo_timer.is_expired:
-            n_on = max(pomo_timer.remaining / pomo_timer.duration * pixels.n, 0.0)
-            remainder, whole = math.modf(pixels.n - n_on)
+        while not pomo.is_expired:
+            off_portion = min((1.0 - pomo.remaining / pomo.duration) * pixels.n, 1.0)
+            remainder, whole = math.modf(off_portion)
             n_off = int(whole)
             pixels[:n_off] = [OFF] * n_off
             if n_off < pixels.n:
-                pixels[n_off] = tuple(x * (1 - remainder) for x in pixel_color)
-            pixels.show()
+                pixels[n_off] = tuple(x * remainder for x in pixel_color)
         pixels.fill(OFF)
-        pixels.show()
 
         pomo_alarm.start()
         wait_for_press(continue_button)
         pomo_alarm.stop()
 
-        focus_time = not focus_time
+        pomo.next()
 
 
 main()
