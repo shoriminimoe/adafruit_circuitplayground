@@ -56,14 +56,15 @@ class Timer:
         if self._paused:
             return
         self._time_paused = self._time_func
+        self._paused = True
 
     def resume(self):
         if not self._paused:
             return
+        self._paused = False
         pause_duration = self._time_func - self._time_paused
         self._time_start += pause_duration
         self._expire_time += pause_duration
-        self._paused = False
 
 
 class Pomodoro(Timer):
